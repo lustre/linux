@@ -405,6 +405,7 @@ config NFS_V4_2_SSC_HELPER
 	default y if NFS_V4_2
 
 source "net/sunrpc/Kconfig"
+source "fs/lustre/Kconfig"
 source "fs/ceph/Kconfig"
 
 source "fs/smb/Kconfig"

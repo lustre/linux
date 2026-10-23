@@ -1,0 +1,57 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+#ifndef _LINUX_SHRINKER_LUSTRE_H
+#define _LINUX_SHRINKER_LUSTRE_H
+
+#include <linux/atomic.h>
+#include <linux/mm.h>
+#include <linux/shrinker.h>
+#include <linux/types.h>
+
+#if !defined(CONFIG_SHRINKER_DEBUG) || defined(HAVE_REGISTER_SHRINKER_FORMAT_NAMED)
+struct ll_shrinker {
+	struct shrinker ll_shrinker;
+
+  #ifndef CONFIG_SHRINKER_DEBUG
+	int debugfs_id;
+	const char *name;
+	struct dentry *debugfs_entry;
+  #endif
+  #ifdef HAVE_REGISTER_SHRINKER_FORMAT_NAMED
+	struct va_format vaf;
+  #endif
+};
+#else
+#define ll_shrinker	shrinker
+#endif
+
+#if !defined(CONFIG_SHRINKER_DEBUG)
+void shrinker_debugfs_fini(void);
+int shrinker_debugfs_init(void);
+#else
+
+static inline void shrinker_debugfs_fini(void) {};
+static inline int shrinker_debugfs_init(void) { return 0; };
+#endif
+
+struct shrinker *shrinker_alloc(unsigned int flags,
+				   const char *fmt, ...);
+void shrinker_register(struct shrinker *shrinker);
+void shrinker_free(struct shrinker *shrinker);
+
+static inline const char *shrinker_debugfs_path(struct shrinker *shrinker)
+{
+#ifndef CONFIG_SHRINKER_DEBUG
+ #ifndef HAVE_SHRINKER_ALLOC
+	struct ll_shrinker *s = container_of(shrinker, struct ll_shrinker,
+					     ll_shrinker);
+ #else
+	struct ll_shrinker *s = shrinker->private_data;
+ #endif
+#else /* !CONFIG_SHRINKER_DEBUG */
+	struct shrinker *s = shrinker;
+#endif /* CONFIG_SHRINKER_DEBUG */
+
+	return s->debugfs_entry->d_name.name;
+}
+
+#endif /* _LINUX_SHRINKER_LUSTRE_H */
